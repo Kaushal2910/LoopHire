@@ -25,3 +25,6 @@ client_secret*.json
 outputs/
 test.pdf
 *.docx
+
+certificates.json
+projects.json

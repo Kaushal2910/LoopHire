@@ -3,24 +3,62 @@ import subprocess
 import time
 import json
 import sys
+import re
+
+def get_browser_act_cmd():
+    is_windows = os.name == 'nt'
+    venv_cmd = os.path.join(".venv", "Scripts", "browser-act.exe") if is_windows else os.path.join(".venv", "bin", "browser-act")
+    if os.path.exists(venv_cmd):
+        return venv_cmd
+    return "browser-act"
+
+def get_browser_profile_id():
+    # If BROWSER_ACT_PROFILE is configured in env, use it
+    env_profile = os.getenv("BROWSER_ACT_PROFILE")
+    if env_profile:
+        return env_profile
+        
+    # Otherwise, query browser-act browser list to find any configured profile
+    try:
+        cmd = get_browser_act_cmd()
+        result = subprocess.run([cmd, "browser", "list"], capture_output=True, text=True, encoding='utf-8')
+        output = result.stdout.strip()
+        matches = re.findall(r'id=(\S+)', output)
+        if matches:
+            return matches[0]
+    except Exception:
+        pass
+        
+    # Fallback to default
+    return "chrome_local_103775758939324604"
 
 def run_cli_cmd(args):
     # Run a browser-act CLI command and return stdout
+    if args and args[0] == "browser-act":
+        args[0] = get_browser_act_cmd()
     result = subprocess.run(args, capture_output=True, text=True, encoding='utf-8')
     return result.stdout.strip()
 
 def main():
     print("Starting BrowserAct Chrome session...")
     # Start the browser open process in background to keep it alive
+    profile_id = get_browser_profile_id()
     browser_proc = subprocess.Popen([
-        "browser-act", "browser", "open", "chrome_local_103775758939324604",
+        get_browser_act_cmd(), "browser", "open", profile_id,
         "https://www.linkedin.com/jobs/search/?keywords=developer&location=Pune&f_E=1",
         "--allow-restart-chrome", "--session", "linkedin_session"
     ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     # Wait for the browser and page to load
-    print("Waiting 10 seconds for LinkedIn to load and authenticate...")
-    time.sleep(10)
+    print("\n" + "=" * 60)
+    print("  ACTION REQUIRED: LINKEDIN LOG IN / SESSION VERIFICATION  ")
+    print("=" * 60)
+    print("  1. A Chrome browser window has been opened by browser-act.")
+    print("  2. If you are not logged in to LinkedIn, please log in now.")
+    print("  3. Navigate to the job search page if not loaded.")
+    print("=" * 60)
+    input("\n  >>> Press [ENTER] here once you are logged in and ready to scrape... ")
+    print("\n[+] Continuing scraping process...\n")
     
     # Let's scroll the job list container to load more items
     print("Scrolling job list to load entries...")
@@ -72,7 +110,11 @@ def main():
             if (!card) return JSON.stringify({{error: 'card not found'}});
             const titleLink = card.querySelector('a[aria-label]');
             const title = titleLink ? (titleLink.getAttribute('aria-label') || titleLink.innerText) : '';
-            const companyEl = card.querySelector('.pPoqHlXGWZdgNyKfaYdWCoOtQAIiVRUeWuVM') || card.querySelector('.job-card-container__company-name');
+            const companyEl = card.querySelector('.pPoqHlXGWZdgNyKfaYdWCoOtQAIiVRUeWuVM') || 
+                              card.querySelector('.job-card-container__company-name') ||
+                              card.querySelector('.artdeco-entity-lockup__subtitle') ||
+                              card.querySelector('.job-card-container__primary-description') ||
+                              card.querySelector('.job-card-v2__company-name');
             const company = companyEl ? companyEl.innerText : '';
             const descEl = document.querySelector('#job-details');
             const description = descEl ? descEl.innerText : '';

@@ -1,0 +1,8 @@
+[
+  {
+    "title": "Certificate Title (e.g. AWS Certified Solutions Architect)",
+    "fileName": "optional_certificate_filename.pdf",
+    "type": "pdf",
+    "description": "Brief description of what was learned or certified."
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "ProjectName",
+    "displayName": "Project Display Name (e.g. ProjectName - Automated Cloud Deployment)",
+    "description": "Short description of what the project does.",
+    "technologies": ["Python", "React", "Docker", "AWS"],
+    "category": "Web Development / Cloud & DevOps",
+    "bullets": [
+      "Key achievement or action taken in the project.",
+      "Another tailored bullet point highlighting technology usage.",
+      "Metrics-based results achieved (e.g. improved performance by 30%)."
+    ]
+  }
+]

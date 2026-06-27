@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 import json
@@ -106,12 +107,33 @@ def main():
         except Exception as e:
             print(f"  -> Error parsing job data: {e}")
             
-    # Save to file
+    # Save to file, appending only new jobs
     output_path = "jobs_data.json"
+    existing_jobs = []
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, "r", encoding="utf-8") as f:
+                existing_jobs = json.load(f)
+        except Exception as e:
+            print(f"Error loading existing jobs data: {e}")
+
+    existing_keys = {
+        (job.get("title", "").strip().lower(), job.get("company", "").strip().lower())
+        for job in existing_jobs
+    }
+
+    new_jobs_added = 0
+    for job in jobs_data:
+        key = (job.get("title", "").strip().lower(), job.get("company", "").strip().lower())
+        if key not in existing_keys:
+            existing_jobs.append(job)
+            existing_keys.add(key)
+            new_jobs_added += 1
+
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(jobs_data, f, indent=4, ensure_ascii=False)
+        json.dump(existing_jobs, f, indent=4, ensure_ascii=False)
         
-    print(f"\nSuccessfully saved {len(jobs_data)} jobs to {output_path}")
+    print(f"\nSuccessfully added {new_jobs_added} new jobs (Total: {len(existing_jobs)}) to {output_path}")
     
     # Close browser session
     print("Closing browser session...")

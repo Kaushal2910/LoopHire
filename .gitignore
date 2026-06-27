@@ -13,5 +13,15 @@ venv/
 # VS Code
 .vscode/
 
-# macOS
-.DS_Store
+# Output files
+output/
+
+# Credentials
+token.json
+client_secret*.json
+
+# Logs
+
+outputs/
+test.pdf
+*.docx

@@ -2,13 +2,120 @@ import os
 import json
 import sys
 import time
+import datetime
 from pypdf import PdfReader
 from dotenv import load_dotenv
 from groq_client import query_groq, api_keys
 from generation_helpers import slugify, save_docx_cv, save_docx_cover_letter
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 
 # Load environment variables from .env file
 load_dotenv()
+
+SPREADSHEET_ID = "1MxfvJ-tJR6lZkgfv_KfbvD1F-vi7bvrmvd-3fkUtWVo"
+
+def update_google_sheet(sheet_id, job_title, company_name, match_score, prep_topics, acceptance_chance, ats_score):
+    SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+    creds = None
+    token_path = 'token.json'
+    client_secret_path = 'client_secret_198368735183-n9hh7oc3b74e0csm5ahcevid83sblam6.apps.googleusercontent.com.json'
+
+    # Load credentials
+    if os.path.exists(token_path):
+        try:
+            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+        except Exception as e:
+            print(f"  [Google Sheets API] Error loading token.json: {e}")
+            
+    if not creds or not creds.valid:
+        try:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                if not os.path.exists(client_secret_path):
+                    print(f"  [Google Sheets API] Client secret file not found at '{client_secret_path}'")
+                    return False
+                flow = InstalledAppFlow.from_client_secrets_file(client_secret_path, SCOPES)
+                creds = flow.run_local_server(port=0)
+            with open(token_path, 'w') as token:
+                token.write(creds.to_json())
+        except Exception as e:
+            print(f"  [Google Sheets API] Authentication failed: {e}")
+            return False
+
+    # Access Google Sheets service
+    try:
+        service = build('sheets', 'v4', credentials=creds)
+        sheet_name = 'Sheet1'
+        
+        # Read current rows to prevent duplicates and check if headers exist
+        result = service.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range=f"'{sheet_name}'!A1:Z1000"
+        ).execute()
+        rows = result.get('values', [])
+        
+        headers = [
+            "Job Title",
+            "Company Name",
+            "Match Score (%)",
+            "Interview Prep Topics",
+            "Acceptance Chance (%)",
+            "Resume Ats Score (%)",
+            "Application Status",
+            "Application Date"
+        ]
+        
+        # If sheet is empty, write headers
+        if not rows:
+            service.spreadsheets().values().append(
+                spreadsheetId=sheet_id,
+                range=f"'{sheet_name}'!A1",
+                valueInputOption="RAW",
+                body={"values": [headers]}
+            ).execute()
+            print("  [Google Sheets API] Created headers in empty sheet.")
+            rows = [headers]
+        
+        # Check for duplicates (same job title and company combination)
+        for row in rows[1:]:
+            if len(row) >= 2:
+                existing_title = row[0].strip().lower()
+                existing_company = row[1].strip().lower()
+                if existing_title == job_title.strip().lower() and existing_company == company_name.strip().lower():
+                    print(f"  [Google Sheets API] Duplicate entry found for '{job_title}' at '{company_name}'. Skipping.")
+                    return True  # Considered successful skip
+
+        app_date = datetime.date.today().strftime("%Y-%m-%d")
+        
+        new_row = [
+            job_title,
+            company_name,
+            f"{match_score}%",
+            prep_topics,
+            f"{acceptance_chance}%",
+            f"{ats_score}%",
+            "Applied",
+            app_date
+        ]
+        
+        # Append new row
+        service.spreadsheets().values().append(
+            spreadsheetId=sheet_id,
+            range=f"'{sheet_name}'!A1",
+            valueInputOption="USER_ENTERED",
+            body={"values": [new_row]}
+        ).execute()
+        
+        print(f"  [Google Sheets API] Successfully appended row for '{job_title}' at '{company_name}'.")
+        return True
+    except Exception as e:
+        print(f"  [Google Sheets API] Failed to update spreadsheet: {e}")
+        return False
+
 
 def extract_resume_text(pdf_path):
     print(f"Extracting text from PDF: {pdf_path}...")
@@ -63,6 +170,48 @@ def main():
             print(f"Loaded {len(projs)} projects from {projects_path}.")
         except Exception as e:
             print(f"[Warning] Failed to load projects.json: {e}")
+
+    # 3c. Load applied jobs from Google Sheet to avoid duplicates and save LLM costs
+    applied_jobs = set()
+    SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+    creds = None
+    token_path = 'token.json'
+    client_secret_path = 'client_secret_198368735183-n9hh7oc3b74e0csm5ahcevid83sblam6.apps.googleusercontent.com.json'
+
+    if os.path.exists(token_path):
+        try:
+            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+        except Exception as e:
+            print(f"[Warning] Error loading token.json: {e}")
+            
+    if not creds or not creds.valid:
+        try:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                if os.path.exists(client_secret_path):
+                    flow = InstalledAppFlow.from_client_secrets_file(client_secret_path, SCOPES)
+                    creds = flow.run_local_server(port=0)
+                    with open(token_path, 'w') as token:
+                        token.write(creds.to_json())
+        except Exception as e:
+            print(f"[Warning] Google Sheets authentication failed on startup: {e}")
+
+    if creds and creds.valid:
+        try:
+            service = build('sheets', 'v4', credentials=creds)
+            result = service.spreadsheets().values().get(
+                spreadsheetId=SPREADSHEET_ID,
+                range="'Sheet1'!A1:B1000"
+            ).execute()
+            rows = result.get('values', [])
+            if rows and len(rows) > 1:
+                for row in rows[1:]:
+                    if len(row) >= 2:
+                        applied_jobs.add((row[0].strip().lower(), row[1].strip().lower()))
+            print(f"Loaded {len(applied_jobs)} applied jobs from Google Sheets.")
+        except Exception as e:
+            print(f"[Warning] Failed to fetch applied jobs from Google Sheet: {e}")
 
     # 4. Read jobs data
     jobs_path = "jobs_data.json"
@@ -167,7 +316,10 @@ Output your response strictly in the following JSON format:
       "<Paragraph 4: Conclusion, expressing enthusiasm and call to action>"
     ],
     "raw_markdown": "<A complete, beautifully formatted markdown text of the cover letter.>"
-  }
+  },
+  "interview_prep_topics": "<concise comma-separated list of the most relevant technical and behavioral topics for the role>",
+  "acceptance_chance": <integer probability from 0 to 100 based on match score and job requirements>,
+  "resume_ats_score": <integer ATS compatibility score from 0 to 100 of the tailored resume vs job description>
 }
 Ensure the output is valid JSON and nothing else."""
 
@@ -175,6 +327,46 @@ Ensure the output is valid JSON and nothing else."""
         title = job.get("title", "Unknown Title")
         company = job.get("company", "Unknown Company")
         description = job.get("description", "")
+
+        # 1. Skip if already applied to this job in Google Sheets
+        if (title.strip().lower(), company.strip().lower()) in applied_jobs:
+            print(f"\n[{index + 1}/{len(jobs)}] Skipping '{title}' at '{company}' (Already applied/present in Google Sheet).")
+            continue
+
+        folder_name = slugify(company, title)
+        out_dir = os.path.join("outputs", folder_name)
+        gen_data_path = os.path.join(out_dir, "generation_data.json")
+
+        # 2. Check if we already have generated files and metadata cached
+        if os.path.exists(out_dir) and os.path.exists(gen_data_path):
+            print(f"\n[{index + 1}/{len(jobs)}] Tailored outputs already exist for '{title}' at '{company}'.")
+            try:
+                with open(gen_data_path, "r", encoding="utf-8") as meta_f:
+                    cached_data = json.load(meta_f)
+                
+                match_score_pct = cached_data.get("match_score", 0)
+                prep_topics = cached_data.get("interview_prep_topics", "")
+                acceptance_chance = cached_data.get("acceptance_chance", 0)
+                ats_score = cached_data.get("resume_ats_score", 0)
+                
+                print(f"    Updating Google Sheet using cached metadata...")
+                success = update_google_sheet(
+                    sheet_id=SPREADSHEET_ID,
+                    job_title=title,
+                    company_name=company,
+                    match_score=match_score_pct,
+                    prep_topics=prep_topics,
+                    acceptance_chance=acceptance_chance,
+                    ats_score=ats_score
+                )
+                if success:
+                    print(f"    [STATUS] Google Sheets update succeeded for '{title}' at '{company}'.")
+                    applied_jobs.add((title.strip().lower(), company.strip().lower()))
+                else:
+                    print(f"    [STATUS] Google Sheets update failed for '{title}' at '{company}'.")
+            except Exception as sheet_err:
+                print(f"    [STATUS] Failed to update Google Sheet using cached metadata: {sheet_err}")
+            continue
 
         scoring_user_prompt = f"""Candidate Resume Text:
 {cv_text}
@@ -224,7 +416,10 @@ Job Details:
 Title: {title}
 Company: {company}
 Description:
-{description}"""
+{description}
+
+---
+Match Score (evaluated by technical recruiter): {score}/10"""
 
             # Call Groq to generate materials (using stable llama-3.1-8b-instant to avoid daily token limits)
             gen_result = query_groq(generator_system_prompt, generator_user_prompt, model="llama-3.1-8b-instant")
@@ -233,19 +428,64 @@ Description:
                 print(f"    [Error generating documents]: {gen_result['error']}")
             else:
                 try:
-                    folder_name = slugify(company, title)
-                    out_dir = os.path.join("outputs", folder_name)
                     os.makedirs(out_dir, exist_ok=True)
                     
-                    # Save CV files
-                    cv_data = gen_result.get("cv", {})
-                    save_docx_cv(cv_data, os.path.join(out_dir, "tailored_cv.docx"))
+                    # Save CV files only if they do not exist (no overwrite)
+                    cv_filepath = os.path.join(out_dir, "tailored_cv.docx")
+                    if not os.path.exists(cv_filepath):
+                        cv_data = gen_result.get("cv", {})
+                        save_docx_cv(cv_data, cv_filepath)
+                        print(f"    -> Generated tailored CV saved to: {cv_filepath}")
+                    else:
+                        print(f"    -> Tailored CV already exists at '{cv_filepath}'. Skipping write to prevent overwrite.")
                     
-                    # Save Cover Letter files
-                    letter_data = gen_result.get("cover_letter", {})
-                    save_docx_cover_letter(letter_data, os.path.join(out_dir, "cover_letter.docx"))
+                    # Save Cover Letter files only if they do not exist (no overwrite)
+                    letter_filepath = os.path.join(out_dir, "cover_letter.docx")
+                    if not os.path.exists(letter_filepath):
+                        letter_data = gen_result.get("cover_letter", {})
+                        save_docx_cover_letter(letter_data, letter_filepath)
+                        print(f"    -> Generated Cover Letter saved to: {letter_filepath}")
+                    else:
+                        print(f"    -> Cover Letter already exists at '{letter_filepath}'. Skipping write to prevent overwrite.")
                     
-                    print(f"    -> Generated files saved to: outputs/{folder_name}/")
+                    # Google Sheets Integration & Caching
+                    match_score_pct = score * 10
+                    prep_topics = gen_result.get("interview_prep_topics", "General behavioral and technical questions")
+                    acceptance_chance = gen_result.get("acceptance_chance", 70)
+                    ats_score = gen_result.get("resume_ats_score", 75)
+
+                    # Save cached metadata
+                    try:
+                        cached_metadata = {
+                            "match_score": match_score_pct,
+                            "interview_prep_topics": prep_topics,
+                            "acceptance_chance": acceptance_chance,
+                            "resume_ats_score": ats_score
+                        }
+                        with open(gen_data_path, "w", encoding="utf-8") as meta_f:
+                            json.dump(cached_metadata, meta_f, indent=4, ensure_ascii=False)
+                        print(f"    -> Saved generation metadata cache to: {gen_data_path}")
+                    except Exception as cache_err:
+                        print(f"    [Warning] Failed to save generation metadata cache: {cache_err}")
+
+                    try:
+                        print(f"    Updating Google Sheet for {title} at {company}...")
+                        success = update_google_sheet(
+                            sheet_id=SPREADSHEET_ID,
+                            job_title=title,
+                            company_name=company,
+                            match_score=match_score_pct,
+                            prep_topics=prep_topics,
+                            acceptance_chance=acceptance_chance,
+                            ats_score=ats_score
+                        )
+                        if success:
+                            print(f"    [STATUS] Google Sheets update succeeded for '{title}' at '{company}'.")
+                            applied_jobs.add((title.strip().lower(), company.strip().lower()))
+                        else:
+                            print(f"    [STATUS] Google Sheets update failed for '{title}' at '{company}'.")
+                    except Exception as sheet_err:
+                        print(f"    [STATUS] Google Sheets update failed for '{title}' at '{company}': {sheet_err}")
                 except Exception as e:
                     print(f"    [Error writing documents to file]: {e}")
 

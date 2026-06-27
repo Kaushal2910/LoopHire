@@ -1,0 +1,53 @@
+[
+  {
+    "name": "MediTrack",
+    "displayName": "MediTrack – Infrastructure Automation with Ansible",
+    "description": "A healthcare application for managing patient records with automated cloud deployments.",
+    "technologies": ["Ansible", "AWS", "Python", "Docker", "Linux", "CI/CD"],
+    "category": "Cloud & DevOps",
+    "bullets": [
+      "Developed a healthcare application for managing patient records, appointments, and medical history.",
+      "Integrated AI-based health recommendations using patient data and predefined health parameters.",
+      "Implemented secure authentication and role-based access control for patients and healthcare providers.",
+      "Automated deployment and server configuration using Ansible and cloud infrastructure to ensure 99.9% uptime."
+    ]
+  },
+  {
+    "name": "NeuroBiz",
+    "displayName": "NeuroBiz",
+    "description": "An AI-powered business automation platform for workflow management.",
+    "technologies": ["React", "TypeScript", "Vite", "Python", "REST APIs", "Tailwind CSS", "Node.js"],
+    "category": "Web Development",
+    "bullets": [
+      "Developed an AI-powered business automation platform using React, TypeScript, Vite, and Python services.",
+      "Built responsive dashboards, workflow automation modules, and real-time chat interfaces using WebSocket communication.",
+      "Integrated REST APIs and optimized application performance through efficient state management and modular design.",
+      "Implemented secure authentication, role-based access control, and analytics dashboards for business insights."
+    ]
+  },
+  {
+    "name": "RelationOS",
+    "displayName": "RelationOS",
+    "description": "An AI-powered relationship companion and couple application with business partner dashboard.",
+    "technologies": ["React Native", "Node.js", "Python", "AI Layer", "NoSQL", "Cloud Infrastructure"],
+    "category": "Web Development / Cloud & DevOps",
+    "bullets": [
+      "Architected and built RelationOS, an AI-powered mobile application designed to strengthen couples' communication and simplify planning.",
+      "Designed and integrated an AI Intelligence Layer that builds evolving personality profiles to deliver personalized event recommendations.",
+      "Developed backend services using Node.js and Python with secure authentication, partner pairing, and real-time syncing.",
+      "Built a business partner dashboard enabling local merchants to manage promotions, offers, and couple-focused events."
+    ]
+  },
+  {
+    "name": "Sanz Cafe",
+    "displayName": "Sanz Cafe – Freelance Project",
+    "description": "A responsive website built for a business client.",
+    "technologies": ["HTML5", "CSS3", "JavaScript", "Responsive Design", "Git"],
+    "category": "Web Development",
+    "bullets": [
+      "Developed and deployed a responsive website for a local business client, increasing their online presence.",
+      "Optimized user experience and responsiveness across mobile, tablet, and desktop devices.",
+      "Collaborated directly with the client to gather requirements, deliver features, and handle domain/hosting setup."
+    ]
+  }
+]

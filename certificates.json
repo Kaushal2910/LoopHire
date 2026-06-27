@@ -1,0 +1,100 @@
+[
+  {
+    "title": "AWS Summit – Certificate of Attendance",
+    "fileName": "AWS Summit certificate of attendence.jpeg",
+    "type": "image",
+    "description": "Attended AWS Summit, gaining insights into cloud solutions and services."
+  },
+  {
+    "title": "CSS Basics – HackerRank",
+    "fileName": "css certificate by hacker rank.pdf",
+    "type": "pdf",
+    "description": "Certified by HackerRank for foundational CSS skills and styling knowledge."
+  },
+  {
+    "title": "C# Basics – HackerRank",
+    "fileName": "c_sharp_basic certificate by hacker rank.pdf",
+    "type": "pdf",
+    "description": "Certified by HackerRank for basic C# programming knowledge."
+  },
+  {
+    "title": "Data Analytics – Forage",
+    "fileName": "Data Analytics certificate by forage.pdf",
+    "type": "pdf",
+    "description": "Completed virtual internship program in Data Analytics through Forage."
+  },
+  {
+    "title": "Data Science & AIML Internship – YBI Foundation",
+    "fileName": "Data Science and AIML Internship certificate by ybi foundation.pdf",
+    "type": "pdf",
+    "description": "Completed internship focusing on data science and AI/ML concepts."
+  },
+  {
+    "title": "Employability Skill Development – RPG Foundation & Zensar",
+    "fileName": "Employability Skill Development Program participation certificate byb RPG Foundation and Zensar.jpeg",
+    "type": "image",
+    "description": "Participated in skill development program enhancing employability skills."
+  },
+  {
+    "title": "Project Management – Forage",
+    "fileName": "Project management_certificate by forage.pdf",
+    "type": "pdf",
+    "description": "Completed virtual internship program in project management."
+  },
+  {
+    "title": "ServiceNow Micro-Certification",
+    "fileName": "ServiceNow Micro certificate.jpeg",
+    "type": "image",
+    "description": "Earned micro-certification for ServiceNow fundamentals."
+  },
+  {
+    "title": "Software Development Workshop – Crio.do",
+    "fileName": "software development workshop certificate by crio.do.pdf",
+    "type": "pdf",
+    "description": "Participated in software development workshop hosted by Crio.do."
+  },
+  {
+    "title": "WordPress Development – Udemy",
+    "fileName": "wordpress certificate by udemy.pdf",
+    "type": "pdf",
+    "description": "Completed Udemy course on WordPress website development."
+  },
+  
+  {
+    "title": "Salesforce Certified Agentforce Specialist",
+    "fileName": "salesforce_agentforce_specialist.pdf",
+    "type": "pdf",
+    "description": "Earned Salesforce certification as an Agentforce Specialist."
+  },
+  {
+    "title": "Oracle Certified Foundations Associate: Agentic AI",
+    "fileName": "oracle_agentic_ai_foundations.pdf",
+    "type": "pdf",
+    "description": "Earned Oracle certification for foundational knowledge in Agentic AI."
+  },
+  {
+    "title": "Oracle Cloud Infrastructure Foundations Associate",
+    "fileName": "oracle_cloud_infrastructure_foundations.pdf",
+    "type": "pdf",
+    "description": "Earned Oracle certification for foundational knowledge in Cloud Infrastructure."
+  },
+  {
+    "title": "Oracle Data Platforms Foundations",
+    "fileName": "oracle_data_platforms_foundations.pdf",
+    "type": "pdf",
+    "description": "Certified by Oracle for foundational understanding of Data Platforms."
+  },
+  {
+    "title": "Oracle Certified Architect Associate",
+    "fileName": "oracle_certified_architect_associate.pdf",
+    "type": "pdf",
+    "description": "Earned Oracle Architect Associate certification."
+  },
+  {
+    "title": "Japanese Language Proficiency Test (JLPT N5)",
+    "fileName": "jlpt_n5_certificate.pdf",
+    "type": "pdf",
+    "description": "Certified in basic Japanese language proficiency at the N5 level."
+  }
+
+]
